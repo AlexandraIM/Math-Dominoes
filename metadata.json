@@ -1,0 +1,5 @@
+{
+  "name": "Math Dominoes",
+  "description": "A fun and educational game where you solve math problems to connect domino tiles. Players must chain the tiles by matching a mathematical expression on one tile with the correct numerical answer on another.",
+  "requestFramePermissions": []
+}
