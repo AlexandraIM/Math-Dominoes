@@ -43,12 +43,23 @@ export default function App() {
   }, [t]);
 
   const boardEnds = useMemo(() => {
-    if (boardTiles.length === 0) return { startValue: null, endValue: null };
+    if (boardTiles.length === 0) return { startValue: null, startType: null, endValue: null, endType: null };
     const first = boardTiles[0];
     const last = boardTiles[boardTiles.length - 1];
+    
+    // The value and type exposed at the START of the chain (left side of the first tile)
+    // If not flipped: [problem|answer] -> left value is solution, left type is problem
+    // If flipped:    [answer|problem] -> left value is displayAnswer, left type is answer
     const startValue = first.flipped ? first.displayAnswer : first.solution;
+    const startType: 'problem' | 'answer' = first.flipped ? 'answer' : 'problem';
+
+    // The value and type exposed at the END of the chain (right side of the last tile)
+    // If not flipped: [problem|answer] -> right value is displayAnswer, right type is answer
+    // If flipped:    [answer|problem] -> right value is solution, right type is problem
     const endValue = last.flipped ? last.solution : last.displayAnswer;
-    return { startValue, endValue };
+    const endType: 'problem' | 'answer' = last.flipped ? 'problem' : 'answer';
+
+    return { startValue, startType, endValue, endType };
   }, [boardTiles]);
 
   const handleNewGame = useCallback(async (difficulty: Difficulty, mode: GameMode, aiDifficulty: AIDifficulty) => {
@@ -122,20 +133,24 @@ export default function App() {
     const activeHand = currentPlayer === 'player1' ? player1Hand : player2Hand;
     if (!selectedHandTile || !activeHand.find(t => t.id === selectedHandTile.id)) return;
 
-    const { startValue, endValue } = boardEnds;
+    const { startValue, startType, endValue, endType } = boardEnds;
     let match = false;
     let newTile = { ...selectedHandTile };
 
     if (end === 'start') {
-        if (selectedHandTile.solution === startValue) { 
-            newTile.flipped = true; match = true; 
-        } else if (selectedHandTile.displayAnswer === startValue) { 
+        // Match tile's answer side (displayAnswer) to board's problem side (solution)
+        if (selectedHandTile.displayAnswer === startValue && startType === 'problem') { 
             newTile.flipped = false; match = true; 
+        // Match tile's problem side (solution) to board's answer side (displayAnswer)
+        } else if (selectedHandTile.solution === startValue && startType === 'answer') { 
+            newTile.flipped = true; match = true; 
         }
     } else { // 'end'
-        if (selectedHandTile.solution === endValue) { 
+        // Match tile's problem side (solution) to board's answer side (displayAnswer)
+        if (selectedHandTile.solution === endValue && endType === 'answer') { 
             newTile.flipped = false; match = true; 
-        } else if (selectedHandTile.displayAnswer === endValue) { 
+        // Match tile's answer side (displayAnswer) to board's problem side (solution)
+        } else if (selectedHandTile.displayAnswer === endValue && endType === 'problem') { 
             newTile.flipped = true; match = true; 
         }
     }
@@ -207,10 +222,12 @@ export default function App() {
     
     const findMove = (hand: Domino[]) => {
         for (const tile of hand) {
-            if (tile.solution === boardEnds.startValue) return { tile, end: 'start' as const };
-            if (tile.displayAnswer === boardEnds.startValue) return { tile, end: 'start' as const };
-            if (tile.solution === boardEnds.endValue) return { tile, end: 'end' as const };
-            if (tile.displayAnswer === boardEnds.endValue) return { tile, end: 'end' as const };
+            // Check start
+            if (tile.displayAnswer === boardEnds.startValue && boardEnds.startType === 'problem') return { tile, end: 'start' as const };
+            if (tile.solution === boardEnds.startValue && boardEnds.startType === 'answer') return { tile, end: 'start' as const };
+            // Check end
+            if (tile.solution === boardEnds.endValue && boardEnds.endType === 'answer') return { tile, end: 'end' as const };
+            if (tile.displayAnswer === boardEnds.endValue && boardEnds.endType === 'problem') return { tile, end: 'end' as const };
         }
         return null;
     };
@@ -258,11 +275,15 @@ export default function App() {
     if (isPlayerTurn) {
         const newPlayableIds = new Set<number>();
         const hand = currentPlayer === 'player1' ? player1Hand : player2Hand;
-        const { startValue, endValue } = boardEnds;
+        const { startValue, startType, endValue, endType } = boardEnds;
         if (startValue !== null && endValue !== null) {
             hand.forEach(tile => {
-                if (tile.solution === startValue || tile.displayAnswer === startValue ||
-                    tile.solution === endValue || tile.displayAnswer === endValue) {
+                // Check if tile can connect to the START of the board
+                if ((tile.displayAnswer === startValue && startType === 'problem') || (tile.solution === startValue && startType === 'answer')) {
+                    newPlayableIds.add(tile.id);
+                }
+                // Check if tile can connect to the END of the board
+                if ((tile.solution === endValue && endType === 'answer') || (tile.displayAnswer === endValue && endType === 'problem')) {
                     newPlayableIds.add(tile.id);
                 }
             });

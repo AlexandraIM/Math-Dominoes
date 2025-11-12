@@ -20,11 +20,22 @@ export const calculateHandScore = (hand: Domino[]): number => {
   }, 0);
 };
 
-export const canPlayMove = (hand: Domino[], boardEnds: { startValue: number | null, endValue: number | null }): boolean => {
-    if (boardEnds.startValue === null || boardEnds.endValue === null) return true;
+export const canPlayMove = (hand: Domino[], boardEnds: { 
+  startValue: number | null, 
+  startType: 'problem' | 'answer' | null, 
+  endValue: number | null, 
+  endType: 'problem' | 'answer' | null 
+}): boolean => {
+    if (boardEnds.startValue === null || boardEnds.endValue === null) return true; // First move is always possible
     for (const tile of hand) {
-        if (tile.solution === boardEnds.startValue || tile.displayAnswer === boardEnds.startValue ||
-            tile.solution === boardEnds.endValue || tile.displayAnswer === boardEnds.endValue) {
+        // Check if tile can connect to the START of the board
+        if ((tile.displayAnswer === boardEnds.startValue && boardEnds.startType === 'problem') || 
+            (tile.solution === boardEnds.startValue && boardEnds.startType === 'answer')) {
+            return true;
+        }
+        // Check if tile can connect to the END of the board
+        if ((tile.solution === boardEnds.endValue && boardEnds.endType === 'answer') ||
+            (tile.displayAnswer === boardEnds.endValue && boardEnds.endType === 'problem')) {
             return true;
         }
     }
