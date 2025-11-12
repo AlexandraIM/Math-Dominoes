@@ -1,119 +1,26 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Domino, GameState, Difficulty, Player, GameMode } from './types';
+import { Domino, GameState, Difficulty, Player, GameMode, AIDifficulty, Language } from './types';
 import { generateDominoes } from './services/geminiService';
+import { calculateHandScore, canPlayMove } from './utils';
+import { useLanguage } from './context/LanguageContext';
 
-// --- HELPER COMPONENTS ---
+// Import Components
+import GameSetup from './components/GameSetup';
+import PlayerHandDisplay from './components/PlayerHandDisplay';
+import GameBoard from './components/GameBoard';
+import GameControls from './components/GameControls';
+import GameOverScreen from './components/GameOverScreen';
+import RulesModal from './components/RulesModal';
 
-const DominoTile: React.FC<{
-  domino: Domino;
-  onClick?: () => void;
-  isSelected?: boolean;
-  isOnBoard?: boolean;
-}> = ({ domino, onClick, isSelected, isOnBoard }) => {
-  const { problem, displayAnswer, flipped } = domino;
-  const leftValue = flipped ? displayAnswer : problem;
-  const rightValue = flipped ? problem : displayAnswer;
-
-  const baseClasses = "flex h-16 w-40 md:h-20 md:w-48 rounded-lg shadow-lg border-2 transition-all duration-200 ease-in-out font-bold shrink-0";
-  const stateClasses = isOnBoard
-    ? "bg-[#d41e00] border-[#f76201]/50 text-[#feeba0]" // Scarlet BG, Mimosa text
-    : "bg-[#feeba0] border-[#feeba0]/50 cursor-pointer hover:bg-[#feeba0]/80 text-black"; // Mimosa BG, black text
-  const selectedClasses = isSelected ? "ring-4 ring-[#f76201] scale-105 shadow-xl" : "";
-
-  return (
-    <div className={`${baseClasses} ${stateClasses} ${selectedClasses}`} onClick={onClick}>
-      <div className="w-1/2 flex items-center justify-center text-center text-xs md:text-base break-words border-r-2 border-black/30 p-1">{leftValue}</div>
-      <div className="w-1/2 flex items-center justify-center text-center text-lg md:text-xl break-words p-1">{rightValue}</div>
-    </div>
-  );
-};
-
-const PlayerHandDisplay: React.FC<{
-  hand: Domino[];
-  title: string;
-  isCurrentPlayer: boolean;
-  isComputer: boolean;
-  onTileClick: (tile: Domino) => void;
-  selectedTileId: number | null;
-}> = ({ hand, title, isCurrentPlayer, isComputer, onTileClick, selectedTileId }) => {
-  return (
-    <div className="bg-black/20 p-4 rounded-xl shadow-inner min-h-[140px] w-full">
-      <h2 className="text-lg font-semibold text-[#f76201] mb-4 text-center">{title} {isCurrentPlayer && <span className="text-[#feeba0]">(Current Turn)</span>}</h2>
-      {hand.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {hand.map((tile) => (
-            isComputer ? // Always show computer hand facedown
-              <div key={tile.id} className="h-16 w-40 md:h-20 md:w-48 rounded-lg bg-black/40 border-2 border-[#f76201]/40 shadow-md"></div> :
-              <DominoTile
-                key={tile.id}
-                domino={tile}
-                onClick={() => onTileClick(tile)}
-                isSelected={selectedTileId === tile.id}
-              />
-          ))}
-        </div>
-      ) : <p className="text-center text-[#f76201]/70">No tiles left!</p>}
-    </div>
-  );
-}
-
-const GameSetup: React.FC<{
-  onStartGame: (difficulty: Difficulty, mode: GameMode) => void,
-  isLoading: boolean
-}> = ({ onStartGame, isLoading }) => {
-  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [mode, setMode] = useState<GameMode>('pvc');
-
-  return (
-    <div className="w-full max-w-md mx-auto p-8 bg-black/30 rounded-2xl shadow-2xl flex flex-col gap-6 text-center">
-      <h2 className="text-3xl font-bold text-[#f76201]">Game Setup</h2>
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="difficulty" className="block font-semibold text-[#f76201] mb-2">Difficulty:</label>
-          <select id="difficulty" value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full bg-black/30 text-white rounded-md p-3 border-2 border-[#f76201]/50 focus:ring-2 focus:ring-[#f76201] focus:outline-none">
-            <option value="easy">Easy</option>
-            <option value="easy+">Easy+</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-semibold text-[#f76201] mb-2">Game Mode:</label>
-          <div className="flex justify-center gap-4">
-            <button onClick={() => setMode('pvc')} className={`flex-1 p-3 rounded-lg font-bold transition-colors ${mode === 'pvc' ? 'bg-[#f76201] text-white' : 'bg-black/30 hover:bg-black/50'}`}>vs. Computer</button>
-            <button onClick={() => setMode('pvp')} className={`flex-1 p-3 rounded-lg font-bold transition-colors ${mode === 'pvp' ? 'bg-[#f76201] text-white' : 'bg-black/30 hover:bg-black/50'}`}>vs. Player</button>
-          </div>
-        </div>
-      </div>
-      <button onClick={() => onStartGame(difficulty, mode)} disabled={isLoading} className="w-full px-6 py-4 bg-[#f76201] text-white font-bold rounded-lg shadow-md hover:bg-[#f76201]/80 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center text-lg">
-        {isLoading ? <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div> : "Start Game"}
-      </button>
-    </div>
-  );
-};
-
-
-// --- UTILITY FUNCTIONS ---
-
-const canPlayMove = (hand: Domino[], boardEnds: { startValue: number | null, endValue: number | null }): boolean => {
-    // FIX: Removed reference to `boardTiles` which is not in scope here.
-    // The check for null boardEnds covers the case where the board is empty.
-    if (boardEnds.startValue === null || boardEnds.endValue === null) return true;
-    for (const tile of hand) {
-        if (tile.solution === boardEnds.startValue || tile.displayAnswer === boardEnds.startValue ||
-            tile.solution === boardEnds.endValue || tile.displayAnswer === boardEnds.endValue) {
-            return true;
-        }
-    }
-    return false;
-};
 
 // --- MAIN APP COMPONENT ---
 
 export default function App() {
+  const { language, setLanguage, t } = useLanguage();
+
   const [gameState, setGameState] = useState<GameState>('setup');
   const [gameMode, setGameMode] = useState<GameMode>('pvc');
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('hard');
   const [boardTiles, setBoardTiles] = useState<Domino[]>([]);
   const [player1Hand, setPlayer1Hand] = useState<Domino[]>([]);
   const [player2Hand, setPlayer2Hand] = useState<Domino[]>([]);
@@ -122,33 +29,49 @@ export default function App() {
   const [selectedHandTile, setSelectedHandTile] = useState<Domino | null>(null);
   const [winner, setWinner] = useState<Player | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>("Select game mode and difficulty to start.");
+  const [message, setMessage] = useState<string>("");
   const [consecutivePasses, setConsecutivePasses] = useState(0);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [drawCountThisTurn, setDrawCountThisTurn] = useState(0);
+  const [player1Score, setPlayer1Score] = useState(0);
+  const [player2Score, setPlayer2Score] = useState(0);
+  const [playableTileIds, setPlayableTileIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    // FIX: Cast translation result to string to match state type.
+    setMessage(t('initialMessage') as string);
+  }, [t]);
 
   const boardEnds = useMemo(() => {
     if (boardTiles.length === 0) return { startValue: null, endValue: null };
     const first = boardTiles[0];
     const last = boardTiles[boardTiles.length - 1];
-    // Left value of the first tile
     const startValue = first.flipped ? first.displayAnswer : first.solution;
-    // Right value of the last tile
     const endValue = last.flipped ? last.solution : last.displayAnswer;
     return { startValue, endValue };
   }, [boardTiles]);
 
-  const handleNewGame = useCallback(async (difficulty: Difficulty, mode: GameMode) => {
+  const handleNewGame = useCallback(async (difficulty: Difficulty, mode: GameMode, aiDifficulty: AIDifficulty) => {
     setGameState('loading');
     setGameMode(mode);
+    if(mode === 'pvc') {
+        setAiDifficulty(aiDifficulty);
+    }
     setError(null);
-    setMessage("Generating your unique domino set...");
+    // FIX: Cast translation result to string to match state type.
+    setMessage(t('loadingMessage') as string);
     setWinner(null);
     setConsecutivePasses(0);
     setBoardTiles([]);
     setPlayer1Hand([]);
     setPlayer2Hand([]);
+    setDrawCountThisTurn(0);
+    setPlayer1Score(0);
+    setPlayer2Score(0);
+    setPlayableTileIds(new Set());
 
     try {
-      const generatedData = await generateDominoes(difficulty);
+      const generatedData = await generateDominoes(difficulty, language);
       const allDominoes: Domino[] = generatedData
         .map((d, i) => ({ ...d, id: i, flipped: false }))
         .sort(() => Math.random() - 0.5);
@@ -160,30 +83,36 @@ export default function App() {
         setHeap(allDominoes.slice(11));
         setCurrentPlayer('player1');
         setGameState('playing');
-        setMessage("Player 1's turn. Match the expressions to the answers!");
+        // FIX: Cast translation result to string to match state type.
+        setMessage(t('player1Turn') as string);
       } else {
         throw new Error("Not enough dominoes generated.");
       }
     } catch (err) {
-      setError("Could not start a new game. Please try again.");
+      // FIX: Cast translation result to string to match state type.
+      setError(t('startGameError') as string);
       setGameState('setup');
-      setMessage("Failed to start game. Check your connection or API key.");
+      // FIX: Cast translation result to string to match state type.
+      setMessage(t('startGameError') as string);
     }
-  }, []);
+  }, [language, t]);
 
   const switchTurn = useCallback(() => {
     setSelectedHandTile(null);
+    setDrawCountThisTurn(0);
     const nextPlayer = currentPlayer === 'player1' ? 'player2' : 'player1';
     setCurrentPlayer(nextPlayer);
-    setMessage(`${nextPlayer === 'player1' ? 'Player 1' : (gameMode === 'pvc' ? 'Computer' : 'Player 2')}'s turn.`);
-  }, [currentPlayer, gameMode]);
+    const p2Name = (gameMode === 'pvc' ? t('computerHandTitle') : t('player2HandTitle')) as string;
+    const nextPlayerName = (nextPlayer === 'player1' ? t('player1HandTitle') : p2Name) as string;
+    // FIX: Cast translation result to string to match state type.
+    setMessage(t('playerTurn', nextPlayerName) as string);
+  }, [currentPlayer, gameMode, t]);
 
   const handleSelectHandTile = (tile: Domino) => {
     if (gameState !== 'playing') return;
     const activePlayer = currentPlayer === 'player1' ? player1Hand : player2Hand;
     if(!activePlayer.some(t => t.id === tile.id)) return;
 
-    // Disallow computer tile selection from UI
     if(gameMode === 'pvc' && currentPlayer === 'player2') return;
     
     setSelectedHandTile(prev => (prev?.id === tile.id ? null : tile));
@@ -194,26 +123,19 @@ export default function App() {
     if (!selectedHandTile || !activeHand.find(t => t.id === selectedHandTile.id)) return;
 
     const { startValue, endValue } = boardEnds;
-
     let match = false;
     let newTile = { ...selectedHandTile };
 
     if (end === 'start') {
-        // New tile's RIGHT value must match board's LEFT value (`startValue`)
         if (selectedHandTile.solution === startValue) { 
-            // To put solution on the right, tile must be [displayAnswer | problem], so flipped = true
             newTile.flipped = true; match = true; 
         } else if (selectedHandTile.displayAnswer === startValue) { 
-            // To put displayAnswer on the right, tile must be [problem | displayAnswer], so flipped = false
             newTile.flipped = false; match = true; 
         }
     } else { // 'end'
-        // New tile's LEFT value must match board's RIGHT value (`endValue`)
         if (selectedHandTile.solution === endValue) { 
-            // To put solution on the left, tile must be [problem | displayAnswer], so flipped = false
             newTile.flipped = false; match = true; 
         } else if (selectedHandTile.displayAnswer === endValue) { 
-            // To put displayAnswer on the left, tile must be [displayAnswer | problem], so flipped = true
             newTile.flipped = true; match = true; 
         }
     }
@@ -232,31 +154,40 @@ export default function App() {
       if (updatedHand.length === 0) {
         setGameState('gameOver');
         setWinner(currentPlayer);
-        setMessage(`Congratulations, ${currentPlayer === 'player1' ? 'Player 1' : (gameMode === 'pvc' ? 'Computer' : 'Player 2')} wins!`);
+        const p2Name = (gameMode === 'pvc' ? t('computerHandTitle') : t('player2HandTitle')) as string;
+        const winnerName = (currentPlayer === 'player1' ? t('player1HandTitle') : p2Name) as string;
+        // FIX: Cast translation result to string to match state type.
+        setMessage(t('playerWins', winnerName) as string);
       } else {
         switchTurn();
       }
     } else {
-      setError("That's not a match. Try again!");
+      // FIX: Cast translation result to string to match state type.
+      setError(t('notAMatch') as string);
       setTimeout(() => setError(null), 2000);
       setSelectedHandTile(null);
     }
-  }, [selectedHandTile, boardTiles, player1Hand, player2Hand, currentPlayer, switchTurn, gameMode, boardEnds]);
+  }, [selectedHandTile, boardTiles, player1Hand, player2Hand, currentPlayer, switchTurn, gameMode, boardEnds, t]);
 
   const handleDrawTile = () => {
-    if(heap.length === 0) {
-      setMessage("Heap is empty!");
+    if (heap.length === 0 || drawCountThisTurn >= 3) {
+      // FIX: Cast translation result to string to match state type.
+      setMessage(t('cannotDraw') as string);
       return;
     }
     const tileToDraw = heap[0];
     const newHeap = heap.slice(1);
-    if(currentPlayer === 'player1') {
+    if (currentPlayer === 'player1') {
       setPlayer1Hand([...player1Hand, tileToDraw]);
     } else {
       setPlayer2Hand([...player2Hand, tileToDraw]);
     }
     setHeap(newHeap);
-    setMessage(`${currentPlayer === 'player1' ? 'Player 1' : (gameMode === 'pvc' ? 'Computer' : 'Player 2')} drew a tile.`);
+    setDrawCountThisTurn(c => c + 1);
+    const p2Name = (gameMode === 'pvc' ? t('computerHandTitle') : t('player2HandTitle')) as string;
+    const playerName = (currentPlayer === 'player1' ? t('player1HandTitle') : p2Name) as string;
+    // FIX: Cast translation result to string to match state type.
+    setMessage(t('playerDrewTile', playerName) as string);
   };
 
   const handlePassTurn = () => {
@@ -264,9 +195,15 @@ export default function App() {
     switchTurn();
   };
   
-  // Computer AI Logic
   const handleComputerTurn = useCallback(async () => {
-    setMessage("Computer is thinking...");
+    // FIX: Cast translation result to string to match state type.
+    setMessage(t('computerThinking') as string);
+
+    const maxDraws = {
+      easy: 1,
+      normal: 2,
+      hard: 3,
+    }[aiDifficulty];
     
     const findMove = (hand: Domino[]) => {
         for (const tile of hand) {
@@ -281,27 +218,60 @@ export default function App() {
     let move = findMove(player2Hand);
     let currentHeap = [...heap];
     let currentHand = [...player2Hand];
+    let draws = 0;
 
-    while (!move && currentHeap.length > 0) {
+    while (!move && currentHeap.length > 0 && draws < maxDraws) {
+        draws++;
         await new Promise(resolve => setTimeout(resolve, 1000));
         const tileToDraw = currentHeap.shift()!;
         currentHand.push(tileToDraw);
         setPlayer2Hand([...currentHand]);
         setHeap([...currentHeap]);
-        setMessage("Computer draws a tile...");
-        move = findMove(currentHand); 
+        // FIX: Cast translation result to string to match state type.
+        setMessage(t('computerDrewTile', draws, maxDraws) as string);
+        move = findMove(currentHand);
     }
 
     await new Promise(resolve => setTimeout(resolve, 1500));
     if (move) {
-        setMessage("Computer plays a tile!");
+        // FIX: Cast translation result to string to match state type.
+        setMessage(t('computerPlays') as string);
         setSelectedHandTile(move.tile);
         setTimeout(() => handlePlaceTile(move!.end), 100);
     } else {
-        setMessage("Computer has no moves and must pass.");
+        // FIX: Cast translation result to string to match state type.
+        setMessage(t('computerPasses') as string);
         handlePassTurn();
     }
-  }, [player2Hand, heap, boardEnds, handlePlaceTile, handlePassTurn]);
+  }, [player2Hand, heap, boardEnds, handlePlaceTile, handlePassTurn, aiDifficulty, t]);
+
+  // Effect to update scores whenever a hand changes
+  useEffect(() => {
+    setPlayer1Score(calculateHandScore(player1Hand));
+    setPlayer2Score(calculateHandScore(player2Hand));
+  }, [player1Hand, player2Hand]);
+  
+  const isPlayerTurn = (gameMode === 'pvp' && (currentPlayer === 'player1' || currentPlayer === 'player2')) || (gameMode === 'pvc' && currentPlayer === 'player1');
+
+  // Effect to calculate and highlight playable tiles for the current human player
+  useEffect(() => {
+    if (isPlayerTurn) {
+        const newPlayableIds = new Set<number>();
+        const hand = currentPlayer === 'player1' ? player1Hand : player2Hand;
+        const { startValue, endValue } = boardEnds;
+        if (startValue !== null && endValue !== null) {
+            hand.forEach(tile => {
+                if (tile.solution === startValue || tile.displayAnswer === startValue ||
+                    tile.solution === endValue || tile.displayAnswer === endValue) {
+                    newPlayableIds.add(tile.id);
+                }
+            });
+        }
+        setPlayableTileIds(newPlayableIds);
+    } else {
+        setPlayableTileIds(new Set()); // Clear highlights for computer's turn
+    }
+  }, [currentPlayer, player1Hand, player2Hand, boardEnds, isPlayerTurn]);
 
   useEffect(() => {
     if (gameState === 'playing' && currentPlayer === 'player2' && gameMode === 'pvc') {
@@ -311,94 +281,112 @@ export default function App() {
   }, [gameState, currentPlayer, gameMode, handleComputerTurn]);
 
   useEffect(() => {
-      if (consecutivePasses >= 2) {
-          setGameState('gameOver');
-          if (player1Hand.length < player2Hand.length) setWinner('player1');
-          else if (player2Hand.length < player1Hand.length) setWinner('player2');
-          else setWinner(null); // Draw
-          setMessage("Game is blocked! No more moves can be made.");
+    if (consecutivePasses >= 2) {
+      setGameState('gameOver');
+      const p1Score = calculateHandScore(player1Hand);
+      const p2Score = calculateHandScore(player2Hand);
+      setPlayer1Score(p1Score);
+      setPlayer2Score(p2Score);
+
+      // FIX: Cast translation result to string.
+      const p2Name = (gameMode === 'pvc' ? t('computerHandTitle') : t('player2HandTitle')) as string;
+      // FIX: Cast translation result to string to allow concatenation.
+      let endMessage = t('gameBlocked', p1Score, p2Score, p2Name) as string;
+      if (p1Score < p2Score) {
+        setWinner('player1');
+        // FIX: Cast translation result to string for concatenation.
+        endMessage += t('player1WinsLowScore') as string;
+      } else if (p2Score < p1Score) {
+        setWinner('player2');
+        // FIX: Cast translation result to string for concatenation.
+        endMessage += t('player2WinsLowScore', p2Name) as string;
+      } else {
+        setWinner(null); // Draw
+        // FIX: Cast translation result to string for concatenation.
+        endMessage += t('drawGame') as string;
       }
-  }, [consecutivePasses, player1Hand.length, player2Hand.length]);
+      // FIX: The `endMessage` is now guaranteed to be a string, fixing the type error.
+      setMessage(endMessage);
+    }
+  }, [consecutivePasses, player1Hand, player2Hand, gameMode, t]);
 
   const currentPlayerHand = currentPlayer === 'player1' ? player1Hand : player2Hand;
   const canCurrentPlayerPlay = useMemo(() => canPlayMove(currentPlayerHand, boardEnds), [currentPlayerHand, boardEnds]);
-  
-  const isPlayerTurn = (gameMode === 'pvp' && (currentPlayer === 'player1' || currentPlayer === 'player2')) || (gameMode === 'pvc' && currentPlayer === 'player1');
 
 
-  // Main Render
   return (
     <div className="min-h-screen text-white flex flex-col items-center p-4 selection:bg-[#feeba0] selection:text-black">
-      <header className="w-full max-w-7xl text-center my-4">
-        <h1 className="text-4xl md:text-5xl font-bold text-[#f76201]">Math Dominoes</h1>
+      <header className="w-full max-w-7xl flex justify-between items-center my-4">
+        {/* FIX: Cast translation result to string to fix type error. */}
+        <h1 className="text-4xl md:text-5xl font-bold text-[#f76201]">{t('appTitle') as string}</h1>
+        <div className="flex gap-2">
+            <button onClick={() => setLanguage('en')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'en' ? 'bg-[#f76201] text-white' : 'bg-black/30'}`}>EN</button>
+            <button onClick={() => setLanguage('ua')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'ua' ? 'bg-[#f76201] text-white' : 'bg-black/30'}`}>UA</button>
+        </div>
       </header>
 
       <main className="w-full max-w-7xl flex-grow flex flex-col items-center gap-4">
-        {/* Fix: Show GameSetup during both 'setup' and 'loading' states to provide consistent UI context and fix TypeScript error. */}
-        {(gameState === 'setup' || gameState === 'loading') && <GameSetup onStartGame={handleNewGame} isLoading={gameState === 'loading'} />}
+        {(gameState === 'setup' || gameState === 'loading') && <GameSetup onStartGame={handleNewGame} isLoading={gameState === 'loading'} onShowRules={() => setIsRulesModalOpen(true)} />}
         
         {gameState === 'loading' && <div className="text-center p-4 bg-black/30 rounded-lg font-semibold">{message}</div>}
 
         {error && <div className="w-full text-center p-3 bg-red-500/80 rounded-lg font-semibold animate-pulse">{error}</div>}
         
         {gameState === 'gameOver' && (
-            <div className="text-center p-8 bg-black/30 rounded-2xl shadow-2xl flex flex-col gap-4 items-center">
-                <h2 className="text-3xl font-bold text-[#feeba0]">Game Over!</h2>
-                <p className="text-xl">{message}</p>
-                <button onClick={() => setGameState('setup')} className="mt-4 px-6 py-3 bg-[#f76201] text-white font-bold rounded-lg shadow-md hover:bg-[#f76201]/80 transition-colors">Play Again</button>
-            </div>
+           <GameOverScreen message={message} onPlayAgain={() => setGameState('setup')} />
         )}
 
         {(gameState === 'playing' || gameState === 'gameOver') && (
           <>
-            {/* Opponent's Hand */}
             <PlayerHandDisplay 
               hand={player2Hand} 
-              title={gameMode === 'pvc' ? "Computer's Hand" : "Player 2's Hand"} 
+              title={gameMode === 'pvc' ? t('computerHandTitle') as string : t('player2HandTitle') as string} 
               isCurrentPlayer={currentPlayer === 'player2'}
               isComputer={gameMode === 'pvc'}
               onTileClick={handleSelectHandTile}
               selectedTileId={selectedHandTile?.id ?? null}
+              score={player2Score}
+              playableTileIds={new Set()}
             />
 
-            {/* Game Board */}
-            <div className="bg-black/30 p-4 rounded-xl shadow-2xl w-full min-h-[250px] flex flex-col justify-center">
-              <div className="flex items-center gap-2 overflow-x-auto p-4 justify-start">
-                {selectedHandTile && isPlayerTurn && <button onClick={() => handlePlaceTile('start')} className="h-16 w-16 md:h-20 md:w-20 shrink-0 bg-[#f76201]/50 rounded-lg border-2 border-dashed border-[#f76201] text-3xl font-bold hover:bg-[#f76201]/70 transition-colors">+</button>}
-                {boardTiles.map((tile) => <DominoTile key={tile.id} domino={tile} isOnBoard />)}
-                {selectedHandTile && isPlayerTurn && <button onClick={() => handlePlaceTile('end')} className="h-16 w-16 md:h-20 md:w-20 shrink-0 bg-[#f76201]/50 rounded-lg border-2 border-dashed border-[#f76201] text-3xl font-bold hover:bg-[#f76201]/70 transition-colors">+</button>}
-              </div>
-            </div>
+            <GameBoard
+              tiles={boardTiles}
+              showStartButton={!!selectedHandTile && isPlayerTurn}
+              showEndButton={!!selectedHandTile && isPlayerTurn}
+              onPlaceStart={() => handlePlaceTile('start')}
+              onPlaceEnd={() => handlePlaceTile('end')}
+            />
+            
+            <GameControls
+              heapCount={heap.length}
+              message={message}
+              isPlayerTurn={isPlayerTurn}
+              canPlayerPlay={canCurrentPlayerPlay}
+              drawCountThisTurn={drawCountThisTurn}
+              onShowRules={() => setIsRulesModalOpen(true)}
+              onDrawTile={handleDrawTile}
+              onPassTurn={handlePassTurn}
+            />
 
-            {/* Controls and Status */}
-             <div className="w-full p-3 bg-black/20 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="font-semibold text-[#f76201]">Heap: <span className="text-white font-bold">{heap.length}</span> tiles left</div>
-                <div className="font-bold text-lg text-[#feeba0] text-center">{message}</div>
-                <div className="flex gap-2">
-                  {isPlayerTurn ? (
-                    <>
-                      <button onClick={handleDrawTile} disabled={canCurrentPlayerPlay || heap.length === 0} className="px-5 py-2 bg-[#f76201] rounded-lg font-semibold hover:bg-[#f76201]/80 disabled:bg-gray-600 disabled:cursor-not-allowed">Draw Tile</button>
-                      <button onClick={handlePassTurn} disabled={!isPlayerTurn || (canCurrentPlayerPlay && currentPlayerHand.length > 0) || heap.length > 0} className="px-5 py-2 bg-[#feeba0] text-black rounded-lg font-semibold hover:bg-[#feeba0]/80 disabled:bg-gray-600 disabled:cursor-not-allowed">Pass Turn</button>
-                    </>
-                  ) : <div className="w-48 text-right h-[40px]"></div> }
-                </div>
-            </div>
-
-            {/* Player's Hand */}
             <PlayerHandDisplay 
               hand={player1Hand} 
-              title="Player 1's Hand" 
+              title={t('player1HandTitle') as string} 
               isCurrentPlayer={currentPlayer === 'player1'}
               isComputer={false}
               onTileClick={handleSelectHandTile}
               selectedTileId={selectedHandTile?.id ?? null}
+              score={player1Score}
+              playableTileIds={playableTileIds}
             />
           </>
         )}
       </main>
       <footer className="text-center text-[#f76201]/70 py-4 mt-auto">
-        <p>Powered by React, Tailwind CSS, and Gemini</p>
+        {/* FIX: Cast translation result to string to fix type error. */}
+        <p>{t('footerText') as string}</p>
       </footer>
+
+      <RulesModal isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
     </div>
   );
 }
