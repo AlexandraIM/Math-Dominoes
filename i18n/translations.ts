@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     // App Header & Footer
@@ -38,6 +37,7 @@ export const translations = {
     rulesButton: "Rules",
     drawTileButton: "Draw Tile",
     passTurnButton: "Pass Turn",
+    toggleHintsButton: "Toggle Hints",
     
     // Player Hand
     player1HandTitle: "Player 1's Hand",
@@ -77,9 +77,9 @@ export const translations = {
     howToPlayPoints: [
       "Each player starts with 5 dominoes. The game begins with one domino already on the board.",
       "On your turn, you must match one of your dominoes to an open end of the domino chain.",
-      "Each domino has a math problem on one side and a number on the other.",
-      "A match is made by connecting a problem to its correct solution. For example, if an open end is '10+5', you must play a domino with the number '15'. If an open end is '20', you must play a domino with a problem that equals 20, like '4x5'.",
-      "If you cannot make a move, you can either draw a tile from the 'Heap' (up to 3 times per turn) or pass your turn."
+      "A match is made by connecting a problem to its correct solution (e.g., '10+5' connects to a tile with '15').",
+      "You can toggle hints to see which of your tiles are playable. The game starts with hints off.",
+      "You can choose to draw a tile (up to 3 per turn) or pass your turn, even if you have a valid move. This allows for more strategy."
     ],
     winningHeader: "Winning the Game",
     winningPoints: [
@@ -125,6 +125,7 @@ export const translations = {
     rulesButton: "Правила",
     drawTileButton: "Взяти плитку",
     passTurnButton: "Пропустити хід",
+    toggleHintsButton: "Підказки",
     
     // Player Hand
     player1HandTitle: "Рука Гравця 1",
@@ -164,9 +165,9 @@ export const translations = {
     howToPlayPoints: [
       "Кожен гравець починає з 5 доміно. Гра починається з однієї плитки на столі.",
       "Під час свого ходу ви повинні з'єднати одну зі своїх плиток з відкритим кінцем ланцюжка доміно.",
-      "Кожне доміно має математичну задачу з одного боку та число з іншого.",
-      "З'єднання відбувається шляхом поєднання задачі з її правильною відповіддю. Наприклад, якщо відкритий кінець '10+5', ви повинні зіграти доміно з числом '15'. Якщо відкритий кінець '20', ви повинні зіграти доміно з задачею, що дорівнює 20, наприклад '4x5'.",
-      "Якщо ви не можете зробити хід, ви можете або взяти плитку з 'Колоди' (до 3 за хід), або пропустити свій хід."
+      "З'єднання відбувається шляхом поєднання задачі з її правильною відповіддю (напр., '10+5' з'єднується з плиткою '15').",
+      "Ви можете вмикати та вимикати підказки, щоб бачити, які плитки можна зіграти. Гра починається з вимкненими підказками.",
+      "Ви можете взяти плитку (до 3 за хід) або пропустити свій хід, навіть якщо у вас є доступний хід. Це додає більше стратегії."
     ],
     winningHeader: "Перемога в грі",
     winningPoints: [

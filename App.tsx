@@ -36,6 +36,7 @@ export default function App() {
   const [player1Score, setPlayer1Score] = useState(0);
   const [player2Score, setPlayer2Score] = useState(0);
   const [playableTileIds, setPlayableTileIds] = useState<Set<number>>(new Set());
+  const [showHints, setShowHints] = useState(false); // Hints are off by default
 
   useEffect(() => {
     // FIX: Cast translation result to string to match state type.
@@ -80,6 +81,7 @@ export default function App() {
     setPlayer1Score(0);
     setPlayer2Score(0);
     setPlayableTileIds(new Set());
+    setShowHints(false); // Reset hints on new game
 
     try {
       const generatedData = await generateDominoes(difficulty, language);
@@ -272,7 +274,7 @@ export default function App() {
 
   // Effect to calculate and highlight playable tiles for the current human player
   useEffect(() => {
-    if (isPlayerTurn) {
+    if (isPlayerTurn && showHints) {
         const newPlayableIds = new Set<number>();
         const hand = currentPlayer === 'player1' ? player1Hand : player2Hand;
         const { startValue, startType, endValue, endType } = boardEnds;
@@ -290,9 +292,9 @@ export default function App() {
         }
         setPlayableTileIds(newPlayableIds);
     } else {
-        setPlayableTileIds(new Set()); // Clear highlights for computer's turn
+        setPlayableTileIds(new Set()); // Clear highlights if hints are off or it's not the player's turn
     }
-  }, [currentPlayer, player1Hand, player2Hand, boardEnds, isPlayerTurn]);
+  }, [currentPlayer, player1Hand, player2Hand, boardEnds, isPlayerTurn, showHints]);
 
   useEffect(() => {
     if (gameState === 'playing' && currentPlayer === 'player2' && gameMode === 'pvc') {
@@ -331,8 +333,9 @@ export default function App() {
     }
   }, [consecutivePasses, player1Hand, player2Hand, gameMode, t]);
 
-  const currentPlayerHand = currentPlayer === 'player1' ? player1Hand : player2Hand;
-  const canCurrentPlayerPlay = useMemo(() => canPlayMove(currentPlayerHand, boardEnds), [currentPlayerHand, boardEnds]);
+  const handleToggleHints = () => {
+    setShowHints(prev => !prev);
+  };
 
 
   return (
@@ -382,9 +385,9 @@ export default function App() {
               heapCount={heap.length}
               message={message}
               isPlayerTurn={isPlayerTurn}
-              canPlayerPlay={canCurrentPlayerPlay}
               drawCountThisTurn={drawCountThisTurn}
               onShowRules={() => setIsRulesModalOpen(true)}
+              onToggleHints={handleToggleHints}
               onDrawTile={handleDrawTile}
               onPassTurn={handlePassTurn}
             />

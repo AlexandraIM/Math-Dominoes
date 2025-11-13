@@ -21,7 +21,7 @@ const getPromptDetails = (difficulty: Difficulty) => {
             };
         case 'hard':
             return {
-                description: "medium difficulty operations plus integer square roots (e.g., sqrt(16)) and exponentiation (e.g., 2^3). Ensure solutions are integers and below 1000.",
+                description: "medium difficulty operations plus integer square roots (using the √ symbol, e.g., √16) and exponentiation (e.g., 2^3). Ensure solutions are integers and below 1000.",
                 count: 44
             };
         case 'grade1':
@@ -56,14 +56,14 @@ export const generateDominoes = async (difficulty: Difficulty, language: Languag
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const details = getPromptDetails(difficulty);
-    const languageInstruction = "The 'problem' field MUST be a valid mathematical expression using standard symbols like +, -, *, /, sqrt(), and ^. Do not write out the operators as words (e.g., use '5 + 3' not 'five plus three' or '5 плюс 3').";
+    const languageInstruction = "The 'problem' field MUST be a valid mathematical expression using standard symbols like +, -, *, /, √, and ^. Do not write out the operators as words (e.g., use '5 + 3' not 'five plus three' or '5 плюс 3').";
 
     const prompt = `
         You are a math game designer. Your task is to generate a set of problems for a domino game.
 
         Instructions:
         1. ${languageInstruction}
-        2. Generate ${details.count} unique math problems appropriate for a difficulty of "${details.description}". The problems should only use integers. For square roots, use notation like 'sqrt(16)'. For exponents, use '^', like '2^3'.
+        2. Generate ${details.count} unique math problems appropriate for a difficulty of "${details.description}". The problems should only use integers. For square roots, use the √ symbol, like '√16'. For exponents, use '^', like '2^3'.
         3. Calculate the integer solution for each problem.
         4. Create a list of all the solutions you calculated.
         5. Create a new list of numbers which is a shuffled version of your solutions list. This new list must contain the exact same numbers as the solutions list, just in a different order.
