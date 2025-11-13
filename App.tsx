@@ -336,22 +336,22 @@ export default function App() {
 
 
   return (
-    <div className="min-h-screen text-white flex flex-col items-center p-4 selection:bg-[#feeba0] selection:text-black">
+    <div className="min-h-screen flex flex-col items-center p-4 selection:bg-[#83c5be] selection:text-[#fff1e6]">
       <header className="w-full max-w-7xl flex justify-between items-center my-4">
         {/* FIX: Cast translation result to string to fix type error. */}
-        <h1 className="text-4xl md:text-5xl font-bold text-[#f76201]">{t('appTitle') as string}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-[#52796f]">{t('appTitle') as string}</h1>
         <div className="flex gap-2">
-            <button onClick={() => setLanguage('en')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'en' ? 'bg-[#f76201] text-white' : 'bg-black/30'}`}>EN</button>
-            <button onClick={() => setLanguage('ua')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'ua' ? 'bg-[#f76201] text-white' : 'bg-black/30'}`}>UA</button>
+            <button onClick={() => setLanguage('en')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'en' ? 'bg-[#83c5be] text-white' : 'bg-[#fff1e6]/50'}`}>EN</button>
+            <button onClick={() => setLanguage('ua')} className={`px-4 py-2 rounded-lg font-semibold ${language === 'ua' ? 'bg-[#83c5be] text-white' : 'bg-[#fff1e6]/50'}`}>UA</button>
         </div>
       </header>
 
       <main className="w-full max-w-7xl flex-grow flex flex-col items-center gap-4">
         {(gameState === 'setup' || gameState === 'loading') && <GameSetup onStartGame={handleNewGame} isLoading={gameState === 'loading'} onShowRules={() => setIsRulesModalOpen(true)} />}
         
-        {gameState === 'loading' && <div className="text-center p-4 bg-black/30 rounded-lg font-semibold">{message}</div>}
+        {gameState === 'loading' && <div className="text-center p-4 bg-[#fff1e6]/80 rounded-lg font-semibold">{message}</div>}
 
-        {error && <div className="w-full text-center p-3 bg-red-500/80 rounded-lg font-semibold animate-pulse">{error}</div>}
+        {error && <div className="w-full text-center p-3 bg-red-400/80 rounded-lg font-semibold animate-pulse text-white">{error}</div>}
         
         {gameState === 'gameOver' && (
            <GameOverScreen message={message} onPlayAgain={() => setGameState('setup')} />
@@ -402,7 +402,7 @@ export default function App() {
           </>
         )}
       </main>
-      <footer className="text-center text-[#f76201]/70 py-4 mt-auto">
+      <footer className="text-center text-[#52796f]/70 py-4 mt-auto">
         {/* FIX: Cast translation result to string to fix type error. */}
         <p>{t('footerText') as string}</p>
       </footer>

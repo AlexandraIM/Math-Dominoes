@@ -30,9 +30,9 @@ const DominoTile: React.FC<{
     transition-all
   `;
   const stateClasses = isOnBoard
-    ? "bg-[#d41e00] border-[#f76201]/50 text-[#feeba0]"
-    : "bg-[#feeba0] border-[#feeba0]/50 text-black cursor-pointer group-hover:bg-[#feeba0]/80";
-  const selectedClasses = isSelected ? "ring-4 ring-[#f76201] scale-105 shadow-xl" : "";
+    ? "bg-[#52796f] border-[#83c5be]/50 text-[#fff1e6]"
+    : "bg-[#fff1e6] border-[#83c5be]/50 text-[#2f3e46] cursor-pointer group-hover:bg-[#fff1e6]/80";
+  const selectedClasses = isSelected ? "ring-4 ring-[#83c5be] scale-105 shadow-xl" : "";
   const playableClasses = isPlayable && !isSelected ? "ring-4 ring-green-400/80 shadow-lg" : "";
 
   return (
@@ -40,12 +40,12 @@ const DominoTile: React.FC<{
       <div className={flipperClasses}>
         {/* Front face of the domino */}
         <div className={`${faceClasses} ${stateClasses} ${!isOnBoard ? selectedClasses : ''} ${!isOnBoard ? playableClasses : ''}`}>
-          <div className="w-1/2 flex items-center justify-center text-center text-xs md:text-base break-words border-r-2 border-black/30 p-1">{problem}</div>
+          <div className="w-1/2 flex items-center justify-center text-center text-xs md:text-base break-words border-r-2 border-[#2f3e46]/20 p-1">{problem}</div>
           <div className="w-1/2 flex items-center justify-center text-center text-lg md:text-xl break-words p-1">{displayAnswer}</div>
         </div>
         {/* Back face of the domino (for flipping on board) */}
         <div className={`${faceClasses} ${stateClasses} [transform:rotateY(180deg)]`}>
-          <div className="w-1/2 flex items-center justify-center text-center text-lg md:text-xl break-words border-r-2 border-black/30 p-1">{displayAnswer}</div>
+          <div className="w-1/2 flex items-center justify-center text-center text-lg md:text-xl break-words border-r-2 border-[#fff1e6]/20 p-1">{displayAnswer}</div>
           <div className="w-1/2 flex items-center justify-center text-center text-xs md:text-base break-words p-1">{problem}</div>
         </div>
       </div>

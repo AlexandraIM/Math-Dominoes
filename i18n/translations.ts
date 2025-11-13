@@ -79,7 +79,7 @@ export const translations = {
       "On your turn, you must match one of your dominoes to an open end of the domino chain.",
       "Each domino has a math problem on one side and a number on the other.",
       "A match is made by connecting a problem to its correct solution. For example, if an open end is '10+5', you must play a domino with the number '15'. If an open end is '20', you must play a domino with a problem that equals 20, like '4x5'.",
-      "If you cannot make a move, you must draw from the 'Heap'. You can draw up to 3 tiles per turn. If you still cannot play, you must pass your turn."
+      "If you cannot make a move, you can either draw a tile from the 'Heap' (up to 3 times per turn) or pass your turn."
     ],
     winningHeader: "Winning the Game",
     winningPoints: [
@@ -166,7 +166,7 @@ export const translations = {
       "Під час свого ходу ви повинні з'єднати одну зі своїх плиток з відкритим кінцем ланцюжка доміно.",
       "Кожне доміно має математичну задачу з одного боку та число з іншого.",
       "З'єднання відбувається шляхом поєднання задачі з її правильною відповіддю. Наприклад, якщо відкритий кінець '10+5', ви повинні зіграти доміно з числом '15'. Якщо відкритий кінець '20', ви повинні зіграти доміно з задачею, що дорівнює 20, наприклад '4x5'.",
-      "Якщо ви не можете зробити хід, ви повинні взяти плитку з 'Колоди'. Ви можете взяти до 3 плиток за хід. Якщо ви все ще не можете зробити хід, ви повинні пропустити хід."
+      "Якщо ви не можете зробити хід, ви можете або взяти плитку з 'Колоди' (до 3 за хід), або пропустити свій хід."
     ],
     winningHeader: "Перемога в грі",
     winningPoints: [
